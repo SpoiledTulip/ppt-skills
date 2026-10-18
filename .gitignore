@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# 生成产物（自检除外）
+_test_*.pptx
+*.tmp.pptx
+
+# 图片生成中间产物
+*_2026-*.png
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# WorkBuddy 内部数据
+.workbuddy/
+.slidep/

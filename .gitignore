@@ -22,3 +22,6 @@ Thumbs.db
 # WorkBuddy 内部数据
 .workbuddy/
 .slidep/
+
+# 二进制自检产物不入库（可运行 deck_builder.py 重新生成）
+*.pptx

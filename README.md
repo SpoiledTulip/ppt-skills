@@ -78,8 +78,13 @@ skills/
 └── pptx-deck-builder/
     ├── SKILL.md
     ├── references/design-rules.md      # 设计规范（母版/节奏/色彩/版式/自检）
-    ├── scripts/deck_builder.py         # 渲染库
-    └── examples/demo.pptx              # 自检产物
+    └── scripts/deck_builder.py         # 渲染库
+```
+
+`demo.pptx` 未入库——它是自检产物，运行下面这句即可重新生成：
+
+```bash
+python skills/pptx-deck-builder/scripts/deck_builder.py demo.pptx
 ```
 
 ## 安装

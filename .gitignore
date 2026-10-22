@@ -25,3 +25,13 @@ Thumbs.db
 
 # 二进制自检产物不入库（可运行 deck_builder.py 重新生成）
 *.pptx
+
+# 打包构建产物与临时脚本
+_dist/
+_pack.py
+_upload.py
+_dlverify.py
+_mkrelease.py
+_check.py
+_verify.py
+release.json

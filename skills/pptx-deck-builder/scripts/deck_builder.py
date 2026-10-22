@@ -216,6 +216,39 @@ class Builder:
             pic.crop_bottom = frac
         return pic
 
+    def pic_placeholder(self, slide, x, y, w, h, hint="", spec=""):
+        """配图占位框。素材未就绪时用，标清「该放什么图」。
+
+        产出物在 PowerPoint 里一眼可见，方便交付后按清单补图；
+        补图时把本方法调用换成 pic(slide, "assets/xxx.png", x, y, w, h) 即可。
+        """
+        self.rect(slide, x, y, w, h, fill=None, line=self.p.text3,
+                  radius=10, line_w=1.5)
+        # 内部浅色填充，暗示"这里待填充"
+        self.rect(slide, x + 2, y + 2, w - 4, h - 4, fill=self.p.card,
+                  radius=9, opacity=0.55)
+        cy = y + h / 2 - 46
+        self.text(slide, x + 24, cy, w - 48, 26, "［ 待补配图 ］",
+                  size=16, bold=True, color=self.p.text3, align="center")
+        if hint:
+            self.text(slide, x + 24, cy + 32, w - 48, 30, hint,
+                      size=13, color=self.p.text3, align="center", line_spacing=1.4)
+        if spec:
+            self.text(slide, x + 24, cy + 68, w - 48, 24, spec,
+                      size=12, color=self.p.text3, align="center")
+
+    def images_needed(self, items):
+        """配图需求清单。items: [(文件名, 建议尺寸, prompt 要点, 所属页)]
+
+        返回用法：把这行打印到控制台 / 写进 assets/IMAGES.md，
+        交给外部生图能力逐张产出，再回填到 assets/。
+        """
+        lines = ["| 文件名 | 建议尺寸 | prompt 要点 | 所属页 |",
+                 "| :-- | :-- | :-- | :-- |"]
+        for name, size, prompt, page in items:
+            lines.append(f"| `{name}` | {size} | {prompt} | {page} |")
+        return "\n".join(lines)
+
     # ================= 母版骨架 =================
 
     def header(self, slide, title, chapter=None, page_no=None):

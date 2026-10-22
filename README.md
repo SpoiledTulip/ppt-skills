@@ -68,6 +68,45 @@ b.save("out.pptx")
 - **5 套预置色板** —— 学术答辩 / 科研数据 / 品牌商业 / 气象科普 / 通用汇报，每套含完整适用说明与禁忌
 - **中文友好** —— 自动设置东亚字体（`a:ea`），避免回落到宋体
 
+## 配图：编排外部生图
+
+渲染库本身**不生图**——生图能力由运行环境提供（Codex / Claude Code 的图像工具、外部 API）。skill 负责的是**流程**：何时生图、prompt 怎么写、怎么验收。
+
+完整规范见 [`references/image-workflow.md`](skills/pptx-deck-builder/references/image-workflow.md)。核心几条：
+
+**只有具象场景才生图。** 封面、产品、门店、人物、空间——必须生图，用几何图形冒充会一眼假。而时间轴、矩阵、飞轮、概率条**禁止生图**，用代码画反而更清晰。
+
+**全篇复用同一组风格词**，摄影/插画/3D 严禁混用——这是最常见的失败原因。标准骨架：
+
+```
+[主体与场景] + [构图] + [材质/风格] + [色彩限制] + [光线] + [技术参数] + [禁忌]
+```
+
+**色彩必须锚定到色板 hex**，并加 `strictly limited to ... No green, no purple`。不锚定时模型会自行引入薄荷绿、玫瑰紫这类"看起来高级"但破坏色板的颜色。
+
+**必带禁忌词**：`no text, no logo, no watermark, no faces`。
+
+**逐张验收四项**：内容正确 / **材质统一** / 色彩落板 / 比例可用。材质不统一（一张哑光陶土、一张亮面树脂）必须重生。同图最多重试 2 次，仍不行就换 SVG 或干脆不放图。
+
+**多数服务会加水印**，用 Pillow 裁掉底部 8–9%。
+
+素材没准备好时，用占位框而不是空着：
+
+```python
+b.pic_placeholder(s, 700, 160, 520, 320,
+                  hint="此页需要门店外景照片",
+                  spec="建议 16:9，暖色调，夜景橱窗")
+```
+
+先出配图清单再动手，避免边做边想：
+
+```python
+print(b.images_needed([
+    ("cover.png", "780x720", "潮玩展览空间，奶白展台，柔和射灯", "P01"),
+    ("store.png", "560x420", "门店内景，陈列墙，暖光", "P05"),
+]))
+```
+
 ## 目录结构
 
 ```
@@ -77,7 +116,9 @@ skills/
 │   └── references/palettes.md          # 5 套色板 + 通用负向约束库
 └── pptx-deck-builder/
     ├── SKILL.md
-    ├── references/design-rules.md      # 设计规范（母版/节奏/色彩/版式/自检）
+    ├── references/
+    │   ├── design-rules.md             # 设计规范（母版/节奏/色彩/版式/自检）
+    │   └── image-workflow.md           # 外部生图编排（prompt/验收/水印）
     └── scripts/deck_builder.py         # 渲染库
 ```
 

@@ -333,10 +333,15 @@ class Builder:
         return s
 
     def section(self, number, title, desc, chapter=None):
-        """章节扉页：巨型描边数字 + 右侧标题组（版式自定义，不含页脚）"""
+        """章节扉页：巨型描边数字 + 右侧标题组（版式自定义，不含页脚）
+
+        装饰策略：不用「色块+圆形」这类与主题无关的通用几何图形——
+        那是 AI 感的主要来源。改为极简结构：只有一个描边数字 + 一条细线。
+        """
         s = self._slide()
-        self.rect(s, 118, 96, 300, 260, fill=self.p.accent3, radius=40, opacity=0.9)
-        self.rect(s, 330, 268, 190, 190, fill=self.p.accent2, radius=95, opacity=0.35)
+
+        # 极简背景：一条竖向细色带，暗示章节切换，不喧宾夺主
+        self.rect(s, 0, 0, 8, CANVAS_H, fill=self.p.accent3)
 
         tb = s.shapes.add_textbox(px(40), px(150), px(480), px(320))
         tf = tb.text_frame
@@ -364,8 +369,7 @@ class Builder:
         self.text(s, x, 372, 520, 100, desc, size=19,
                   color=self.p.text2, line_spacing=1.7)
 
-        self.rect(s, CANVAS_W - 84, CANVAS_H - 56, 10, 10,
-                  fill=self.p.accent3, radius=5)
+        # 右下角不放置装饰圆点——纯装饰会拉低整体质感
         return s
 
     def big_number(self, slide, x, y, number, unit="", caption="",

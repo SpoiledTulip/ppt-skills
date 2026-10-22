@@ -48,6 +48,20 @@ def _rgb(hexstr):
     return RGBColor(int(hexstr[0:2], 16), int(hexstr[2:4], 16), int(hexstr[4:6], 16))
 
 
+def _relative_luminance(hexstr):
+    """感知亮度（0–1）。用于自动选前景色，避免深底深字。"""
+    h = hexstr.lstrip('#')
+    rgb = [int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)]
+    # sRGB → 线性
+    lin = [(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4) for c in rgb]
+    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+
+def on_color(bg_hex, dark="#1E1A17", light="#FFFFFF"):
+    """给定背景色，返回可读的前景色（亮底给深字，暗底给白字）。"""
+    return dark if _relative_luminance(bg_hex) > 0.45 else light
+
+
 def _set_font(run, name):
     """同时设置西文与东亚字体——中文若不设 ea typeface 会回落到默认宋体"""
     run.font.name = name
@@ -259,8 +273,9 @@ class Builder:
         if chapter:
             self.rect(slide, CANVAS_W - PAD_X - 108, MARGIN_TOP + 18, 108, 28,
                       fill=self.p.accent3, radius=6)
+            # 贴纸文字色随底色亮度自适应——深色 accent3 上必须给白字，否则黑底黑字
             self.text(slide, CANVAS_W - PAD_X - 108, MARGIN_TOP + 24, 108, 20, chapter,
-                      size=13, bold=True, color=self.p.text, align="center")
+                      size=13, bold=True, color=on_color(self.p.accent3), align="center")
         if page_no is not None:
             self.footer(slide, page_no)
 
@@ -283,15 +298,16 @@ class Builder:
         img_w = 780
         if image:
             self.pic(s, image, CANVAS_W - img_w, 0, img_w, CANVAS_H)
-            # 羽化过渡，避免图片与底色硬边
-            for i in range(6):
-                self.rect(s, CANVAS_W - img_w - 10 + i * 6, 0, 6, CANVAS_H,
-                          fill=self.p.bg, opacity=1 - i / 6.0)
+            # 左缘羽化：叠多层递减不透明度的色块，模拟渐变过渡
+            steps = 12
+            for i in range(steps):
+                self.rect(s, CANVAS_W - img_w + i * 8, 0, 9, CANVAS_H,
+                          fill=self.p.bg, opacity=round(1 - (i + 1) / steps, 3))
 
         if eyebrow:
             self.rect(s, PAD_X, 96, 268, 34, fill=self.p.accent3, radius=17)
             self.text(s, PAD_X + 16, 104, 240, 20, eyebrow,
-                      size=14, bold=True, color=self.p.text, letter_spacing=1.6)
+                      size=14, bold=True, color=on_color(self.p.accent3), letter_spacing=1.6)
 
         self.text(s, PAD_X, 236, 620, 100, main_title,
                   size=82, bold=True, color=self.p.text, line_spacing=1.12, letter_spacing=3)
@@ -302,10 +318,10 @@ class Builder:
         if stats:
             x = PAD_X
             for val, label in stats:
-                self.text(s, x, 552, 200, 48, val, size=38, bold=True,
-                          color=self.p.accent, font=self.num_font)
-                self.text(s, x, 602, 200, 20, label, size=12.5, color=self.p.text3)
-                x += 180
+                self.text(s, x, 540, 200, 62, val, size=54, bold=True,
+                          color=self.p.accent, font=self.num_font, line_spacing=0.95)
+                self.text(s, x, 606, 200, 20, label, size=12.5, color=self.p.text3)
+                x += 190
 
         if footnote:
             self.text(s, PAD_X, 664, 700, 20, footnote, size=12, color=self.p.text3)
@@ -369,9 +385,14 @@ class Builder:
     def card(self, slide, x, y, w, h, title, body, tag=None,
              tag_color=None, head_color=None, radius=14,
              title_size=17, body_size=14):
-        """内容卡片。有 head_color 则整卡为渐变色块（此处用纯色近似）"""
+        """内容卡片。head_color 为非白色块时，文字色自动适配底色亮度"""
         bg = head_color or self.p.card
         line = None if head_color else self.p.line
+        # 深色卡片必须给浅色字，否则标题/正文与底色同色、等于隐形
+        if head_color:
+            t_color = b_color = on_color(head_color)
+        else:
+            t_color, b_color = self.p.text, self.p.text2
         self.rect(slide, x, y, w, h, fill=bg, line=line, radius=radius)
         cy = y + 14
         if tag:
@@ -379,12 +400,12 @@ class Builder:
             self.rect(slide, x + 15, cy, tw, 26,
                       fill=tag_color or self.p.accent2, radius=7)
             self.text(slide, x + 15, cy + 4, tw, 18, tag, size=13, bold=True,
-                      color=self.p.card, align="center")
+                      color=on_color(tag_color or self.p.accent2), align="center")
             cy += 36
         self.text(slide, x + 15, cy, w - 30, 26, title,
-                  size=title_size, bold=True, color=self.p.text)
+                  size=title_size, bold=True, color=t_color)
         self.text(slide, x + 15, cy + title_size + 12, w - 30, h - (cy - y) - title_size - 24,
-                  body, size=body_size, color=self.p.text2, line_spacing=1.55)
+                  body, size=body_size, color=b_color, line_spacing=1.55)
 
     def bar_row(self, slide, x, y, w, label, value_text, ratio,
                 color=None, growth=None, label_size=14):
